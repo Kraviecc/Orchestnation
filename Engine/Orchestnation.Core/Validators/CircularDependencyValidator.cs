@@ -19,7 +19,7 @@ namespace Orchestnation.Core.Validators
         public void Validate(IList<IJobsterAsync<T>> jobsterMetadata)
         {
             Logger.LogInformation("Validating dependencies");
-            IJobsterAsync<T>[] result = jobsterMetadata.TopologicalSort(
+            _ = jobsterMetadata.TopologicalSort(
                     p => jobsterMetadata
                         .Where(q => p.RequiredJobIds.Contains(q.JobId)))
                 .ToArray();
