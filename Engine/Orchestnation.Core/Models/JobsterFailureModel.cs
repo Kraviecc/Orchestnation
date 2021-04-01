@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Orchestnation.Common.Models
+namespace Orchestnation.Core.Models
 {
     public class JobsterFailureModel
     {

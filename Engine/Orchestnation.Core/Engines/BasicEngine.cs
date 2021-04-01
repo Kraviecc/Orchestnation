@@ -1,9 +1,9 @@
 ﻿using Dawn;
 using Microsoft.Extensions.Logging;
-using Orchestnation.Common.Models;
 using Orchestnation.Core.Configuration;
 using Orchestnation.Core.Contexts;
 using Orchestnation.Core.Jobsters;
+using Orchestnation.Core.Models;
 using Orchestnation.Core.Notifiers;
 using Orchestnation.Core.StateHandlers;
 using Orchestnation.Core.Validators;
@@ -65,7 +65,7 @@ namespace Orchestnation.Core.Engines
                             .ToList(),
                         true);
                     _jobsterProgressModel = new JobsterProgressModel(_jobsters.JobstersAsync
-                        .Count(p => p.Status == JobsterStatusEnum.NotStarted 
+                        .Count(p => p.Status == JobsterStatusEnum.NotStarted
                                     || p.Status == JobsterStatusEnum.Executing));
                     _logger.LogInformation("Previous state has been restored, resuming jobsters...");
                 }
