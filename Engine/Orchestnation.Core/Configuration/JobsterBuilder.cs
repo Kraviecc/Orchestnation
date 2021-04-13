@@ -32,7 +32,7 @@ namespace Orchestnation.Core.Configuration
 
         public JobsterBuilder<T> AddBatchSize(int batchSize)
         {
-            _configuration.BatchSize = batchSize;
+            _configuration.SetBatchSize(batchSize);
 
             return this;
         }
@@ -52,6 +52,8 @@ namespace Orchestnation.Core.Configuration
 
         public JobsterBuilder<T> AddProgressNotifier(IProgressNotifier<T> progressNotifier)
         {
+            Guard.Argument(progressNotifier, nameof(progressNotifier)).NotNull();
+
             _configuration.ProgressNotifiers.Add(progressNotifier);
 
             return this;
@@ -59,6 +61,8 @@ namespace Orchestnation.Core.Configuration
 
         public JobsterBuilder<T> AddStateHandler(IJobsterStateHandler<T> jobsterStateHandler)
         {
+            Guard.Argument(jobsterStateHandler, nameof(jobsterStateHandler)).NotNull();
+
             _jobsterStateHandler = jobsterStateHandler;
 
             return this;
@@ -72,6 +76,11 @@ namespace Orchestnation.Core.Configuration
                 _jobsterData,
                 _configuration,
                 _jobsterStateHandler);
+        }
+
+        public int GetJobstersNumber()
+        {
+            return _jobsterData.Count;
         }
 
         private bool IsAdded(IJobsterAsync<T> jobsterAsync)

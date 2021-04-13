@@ -31,6 +31,8 @@ namespace Orchestnation.Core.Engines
             IConfiguration<T> configuration,
             IJobsterStateHandler<T> jobsterStateHandler = null)
         {
+            Guard.Argument(jobstersAsync)
+                .NotNull();
             Guard.Argument(configuration)
                 .NotNull()
                 .Member(p => p.JobsterExecutor,
@@ -131,6 +133,7 @@ namespace Orchestnation.Core.Engines
             } while (_jobsters.JobstersAsync.Any(p => p.Status == JobsterStatusEnum.NotStarted
                                                       || p.Status == JobsterStatusEnum.Executing));
 
+            await Task.WhenAll(_jobsterTasks);
             _logger.LogInformation("All jobsters completed. Job is done.");
             return _jobsters.JobstersAsync;
         }

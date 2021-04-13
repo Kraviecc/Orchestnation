@@ -20,6 +20,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orchestnation.Core.Tests", "Tests\Orchestnation.Core.Tests\Orchestnation.Core.Tests.csproj", "{7A72D411-234B-48FC-ADB9-9253161E73F1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,6 +44,10 @@ Global
 		{7216C332-AF68-4B01-8AAE-58BFB5F8915B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7216C332-AF68-4B01-8AAE-58BFB5F8915B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7216C332-AF68-4B01-8AAE-58BFB5F8915B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A72D411-234B-48FC-ADB9-9253161E73F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A72D411-234B-48FC-ADB9-9253161E73F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A72D411-234B-48FC-ADB9-9253161E73F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A72D411-234B-48FC-ADB9-9253161E73F1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -51,6 +57,7 @@ Global
 		{2103D4BC-7EA2-4D4D-BA63-C5EAD947663C} = {CB2581F8-8240-4677-ADD6-6506E61C8E29}
 		{1AA6CAEE-C62C-4540-AE58-9335A2AD2D1A} = {54CB04C9-63DE-43AA-B4E0-6E0F93120476}
 		{7216C332-AF68-4B01-8AAE-58BFB5F8915B} = {CB2581F8-8240-4677-ADD6-6506E61C8E29}
+		{7A72D411-234B-48FC-ADB9-9253161E73F1} = {CB2581F8-8240-4677-ADD6-6506E61C8E29}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9AFBBB96-888D-4DD3-A769-8A8352B1182D}

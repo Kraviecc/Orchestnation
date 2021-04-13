@@ -8,9 +8,11 @@ namespace Orchestnation.Core.Configuration
 {
     public interface IConfiguration<T> where T : IJobsterContext
     {
-        int BatchSize { get; set; }
+        int BatchSize { get; }
         IJobsterExecutor<T> JobsterExecutor { get; set; }
         IJobsterValidator<T>[] JobsterValidators { get; set; }
         IList<IProgressNotifier<T>> ProgressNotifiers { get; set; }
+
+        void SetBatchSize(int batchSize);
     }
 }
