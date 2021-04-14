@@ -7,8 +7,14 @@ namespace Orchestnation.Core.Tests.Models
 {
     public class TestJobster : IJobsterAsync<CoreTestContext>
     {
-        public TestJobster(CoreTestContext context, string[] requiredJobIds = null)
+        private readonly bool _throwException;
+
+        public TestJobster(
+            CoreTestContext context,
+            bool throwException = false,
+            string[] requiredJobIds = null)
         {
+            _throwException = throwException;
             Context = context;
             RequiredJobIds = requiredJobIds ?? new string[0];
         }
@@ -21,6 +27,11 @@ namespace Orchestnation.Core.Tests.Models
 
         public Task<CoreTestContext> ExecuteAsync(IJobsterAsync<CoreTestContext>[] requiredJobsters)
         {
+            if (_throwException)
+                throw new Exception("Exception from jobster");
+
+            Context.Increment();
+
             return Task.FromResult(Context);
         }
     }

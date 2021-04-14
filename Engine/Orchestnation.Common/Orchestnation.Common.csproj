@@ -9,8 +9,4 @@
     <Product>Orchestnation.Common</Product>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Models\" />
-  </ItemGroup>
-
 </Project>

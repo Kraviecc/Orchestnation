@@ -4,6 +4,7 @@ using Orchestnation.Core.Contexts;
 using Orchestnation.Core.Engines;
 using Orchestnation.Core.Executors;
 using Orchestnation.Core.Jobsters;
+using Orchestnation.Core.Models;
 using Orchestnation.Core.Notifiers;
 using Orchestnation.Core.StateHandlers;
 using Orchestnation.Core.Validators;
@@ -33,6 +34,13 @@ namespace Orchestnation.Core.Configuration
         public JobsterBuilder<T> AddBatchSize(int batchSize)
         {
             _configuration.SetBatchSize(batchSize);
+
+            return this;
+        }
+
+        public JobsterBuilder<T> AddExceptionPolicy(ExceptionPolicy exceptionPolicy)
+        {
+            _configuration.ExceptionPolicy = exceptionPolicy;
 
             return this;
         }

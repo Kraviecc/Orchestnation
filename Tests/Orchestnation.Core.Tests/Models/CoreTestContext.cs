@@ -4,5 +4,15 @@ namespace Orchestnation.Core.Tests.Models
 {
     public class CoreTestContext : IJobsterContext
     {
+        private readonly object _lock = new object();
+        public int Counter { get; set; }
+
+        public void Increment()
+        {
+            lock (_lock)
+            {
+                Counter++;
+            }
+        }
     }
 }

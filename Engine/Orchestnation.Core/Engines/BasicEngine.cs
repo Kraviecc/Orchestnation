@@ -1,5 +1,7 @@
 ﻿using Dawn;
 using Microsoft.Extensions.Logging;
+using Orchestnation.Common.Exceptions;
+using Orchestnation.Common.Models;
 using Orchestnation.Core.Configuration;
 using Orchestnation.Core.Contexts;
 using Orchestnation.Core.Jobsters;
@@ -50,29 +52,7 @@ namespace Orchestnation.Core.Engines
 
         public async Task<IList<IJobsterAsync<T>>> ScheduleJobstersAsync(CancellationToken cancellationToken)
         {
-            if (_jobsterStateHandler != null)
-            {
-                IEnumerable<IJobsterAsync<T>> jobsters = await _jobsterStateHandler.RestoreState();
-                if (jobsters.Any(
-                    p => p.Status == JobsterStatusEnum.Executing || p.Status == JobsterStatusEnum.NotStarted))
-                {
-                    _jobsters = new Jobsters<T>(
-                        jobsters
-                            .Select(
-                                p =>
-                                {
-                                    p.Logger = _logger;
-                                    return p;
-                                })
-                            .ToList(),
-                        true);
-                    _jobsterProgressModel = new JobsterProgressModel(_jobsters.JobstersAsync
-                        .Count(p => p.Status == JobsterStatusEnum.NotStarted
-                                    || p.Status == JobsterStatusEnum.Executing));
-                    _logger.LogInformation("Previous state has been restored, resuming jobsters...");
-                }
-            }
-
+            await RestoreState();
             Validate();
 
             IEnumerable<IJobsterAsync<T>> initialJobsters = _jobsters.GetNoDependencyJobsters();
@@ -96,6 +76,10 @@ namespace Orchestnation.Core.Engines
                 if (_jobsterFailureModel.IsError)
                 {
                     _logger.LogError($"Error has been thrown. Jobster errors:\n{_jobsterFailureModel.GetErrors()}");
+
+                    if (_configuration.ExceptionPolicy == ExceptionPolicy.ThrowImmediately)
+                        throw new JobsterException(_jobsterFailureModel);
+
                     break;
                 }
 
@@ -135,6 +119,11 @@ namespace Orchestnation.Core.Engines
 
             await Task.WhenAll(_jobsterTasks);
             _logger.LogInformation("All jobsters completed. Job is done.");
+
+            if (_jobsterFailureModel.IsError
+               && _configuration.ExceptionPolicy == ExceptionPolicy.ThrowAtTheEnd)
+                throw new JobsterException(_jobsterFailureModel);
+
             return _jobsters.JobstersAsync;
         }
 
@@ -151,6 +140,34 @@ namespace Orchestnation.Core.Engines
                 return;
 
             _jobsterFailureModel.SetIsError(jobsterAsync.JobId, ex);
+        }
+
+        private async Task RestoreState()
+        {
+            if (_jobsterStateHandler == null)
+                return;
+
+            IEnumerable<IJobsterAsync<T>> jobsters = await _jobsterStateHandler.RestoreState();
+            if (!jobsters.Any(
+                p => p.Status == JobsterStatusEnum.Executing || p.Status == JobsterStatusEnum.NotStarted))
+                return;
+
+            _jobsters = new Jobsters<T>(
+                jobsters
+                    .Select(
+                        p =>
+                        {
+                            p.Logger = _logger;
+                            return p;
+                        })
+                    .ToList(),
+                true);
+            _jobsterProgressModel = new JobsterProgressModel(
+                _jobsters.JobstersAsync
+                    .Count(
+                        p => p.Status == JobsterStatusEnum.NotStarted
+                             || p.Status == JobsterStatusEnum.Executing));
+            _logger.LogInformation("Previous state has been restored, resuming jobsters...");
         }
 
         private async Task ThrottleJobsters()
