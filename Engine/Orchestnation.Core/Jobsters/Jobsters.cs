@@ -30,5 +30,14 @@ namespace Orchestnation.Core.Jobsters
                                                     .Any(q => p.RequiredJobIds.Contains(q.JobId)
                                                         && q.Status == JobsterStatusEnum.Completed || q.Status == JobsterStatusEnum.Failed)));
         }
+
+        public bool IsGroupFinished(string groupId)
+        {
+            return JobstersAsync
+                .All(
+                    p => p.GroupId == groupId
+                         && (p.Status == JobsterStatusEnum.Completed
+                             || p.Status == JobsterStatusEnum.Failed));
+        }
     }
 }

@@ -108,9 +108,11 @@ namespace Orchestnation.Core.Tests.Engines
         public async Task Engines_BasicEngine_ShouldReportProgress()
         {
             bool wasNotified = false;
+            bool wasGroupNotified = false;
             const int jobsterCount = 100;
             LocalEventProgressNotifier<CoreTestContext> progressNotifier = new LocalEventProgressNotifier<CoreTestContext>();
-            progressNotifier.NotifyEvent += (jobster, progress) => wasNotified = true;
+            progressNotifier.OnJobsterFinishedNotifyEvent += (jobster, progress) => wasNotified = true;
+            progressNotifier.OnJobsterGroupFinishedNotifyEvent += (groupId, jobsters, progress) => wasGroupNotified = true;
 
             _ = await ExecuteOrchestrator(
                 jobsterCount,
@@ -123,7 +125,33 @@ namespace Orchestnation.Core.Tests.Engines
                 progressNotifier);
 
             Assert.IsTrue(wasNotified);
+            Assert.IsTrue(wasGroupNotified);
         }
+
+        [Test]
+        public async Task Engines_BasicEngine_ShouldReportErrorProgress()
+        {
+            bool wasNotified = false;
+            bool wasGroupNotified = false;
+            const int jobsterCount = 100;
+            LocalEventProgressNotifier<CoreTestContext> progressNotifier = new LocalEventProgressNotifier<CoreTestContext>();
+            progressNotifier.OnJobsterErrorNotifyEvent += (ex, jobster, progress) => wasNotified = true;
+            progressNotifier.OnJobsterGroupErrorNotifyEvent += (ex, groupId, jobsters, progress) => wasGroupNotified = true;
+
+            _ = await ExecuteOrchestrator(
+                jobsterCount,
+                jobsterCount,
+                true,
+                ExceptionPolicy.NoThrow,
+                null,
+                null,
+                null,
+                progressNotifier);
+
+            Assert.IsTrue(wasNotified);
+            Assert.IsTrue(wasGroupNotified);
+        }
+
 
         [Test]
         public async Task Engines_BasicEngine_ShouldRestorePartiallyCompletedState()

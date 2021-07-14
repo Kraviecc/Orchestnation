@@ -33,7 +33,12 @@ namespace Orchestnation.Core.Tests.Configuration
         [Test]
         public void Configuration_BasicConfiguration_ShouldLetAddJobstersToDefaultGroup()
         {
-            Assert.DoesNotThrow(() => _jobsterBuilder.AddJobsters(null, new TestJobster(new CoreTestContext())));
+            TestJobster jobster = new TestJobster(new CoreTestContext());
+
+            Assert.DoesNotThrow(() => _jobsterBuilder.AddJobsters(null, jobster));
+            Assert.AreEqual(
+                JobsterBuilder<CoreTestContext>.JobstersDefaultGroup,
+                jobster.GroupId);
         }
 
         [Test]

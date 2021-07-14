@@ -15,7 +15,7 @@ namespace Orchestnation.Core.Configuration
 {
     public class JobsterBuilder<T> where T : IJobsterContext
     {
-        private const string JobstersDefaultGroup = "jobsters-default-group";
+        public const string JobstersDefaultGroup = "jobsters-default-group";
         private readonly IConfiguration<T> _configuration;
         private readonly IList<IJobsterAsync<T>> _jobsterData = new List<IJobsterAsync<T>>();
         private readonly ILogger _logger;

@@ -50,7 +50,8 @@ namespace Orchestnation.Core.Engines
             configuration.JobsterExecutor.JobsterFinishedEvent += OnJobsterFinished;
         }
 
-        public async Task<IList<IJobsterAsync<T>>> ScheduleJobstersAsync(CancellationToken cancellationToken)
+        public async Task<IList<IJobsterAsync<T>>> ScheduleJobstersAsync(
+            CancellationToken cancellationToken)
         {
             await RestoreState();
             Validate();
@@ -127,6 +128,38 @@ namespace Orchestnation.Core.Engines
             return _jobsters.JobstersAsync;
         }
 
+        private void NotifyErrors(
+            Exception ex,
+            IJobsterAsync<T> jobsterAsync,
+            IJobsterAsync<T>[] groupJobsters)
+        {
+            foreach (IProgressNotifier<T> progressNotifier in _configuration.ProgressNotifiers)
+            {
+                progressNotifier.OnJobsterError(
+                    ex,
+                    jobsterAsync,
+                    _jobsterProgressModel);
+                progressNotifier.OnJobsterGroupError(
+                    ex,
+                    jobsterAsync.GroupId,
+                    groupJobsters,
+                    _jobsterProgressModel);
+            }
+        }
+
+        private void NotifyGroupFinished(
+            IJobsterAsync<T> jobsterAsync,
+            IJobsterAsync<T>[] groupJobsters)
+        {
+            foreach (IProgressNotifier<T> progressNotifier in _configuration.ProgressNotifiers)
+            {
+                progressNotifier.OnJobsterGroupFinished(
+                    jobsterAsync.GroupId,
+                    groupJobsters,
+                    _jobsterProgressModel);
+            }
+        }
+
         private async Task OnJobsterFinished(
             IJobsterAsync<T> jobsterAsync,
             JobsterStatusEnum status,
@@ -134,12 +167,19 @@ namespace Orchestnation.Core.Engines
         {
             jobsterAsync.Status = status;
             _jobsterProgressModel.ReportJobsterFinished(status);
+            IJobsterAsync<T>[] groupJobsters = _jobsters.JobstersAsync
+                .Where(p => p.GroupId == jobsterAsync.GroupId)
+                .ToArray();
+            if (_jobsters.IsGroupFinished(jobsterAsync.GroupId))
+                NotifyGroupFinished(jobsterAsync, groupJobsters);
+
             await _jobsterStateHandler.PersistState(_jobsters.JobstersAsync);
 
             if (status != JobsterStatusEnum.Failed)
                 return;
 
             _jobsterFailureModel.SetIsError(jobsterAsync.JobId, ex);
+            NotifyErrors(ex, jobsterAsync, groupJobsters);
         }
 
         private async Task RestoreState()
