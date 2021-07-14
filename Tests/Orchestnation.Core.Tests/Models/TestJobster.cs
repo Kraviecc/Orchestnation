@@ -20,6 +20,7 @@ namespace Orchestnation.Core.Tests.Models
         }
 
         public CoreTestContext Context { get; set; }
+        public string GroupId { get; set; }
         public string JobId { get; set; } = Guid.NewGuid().ToString();
         public ILogger Logger { get; set; }
         public string[] RequiredJobIds { get; set; }

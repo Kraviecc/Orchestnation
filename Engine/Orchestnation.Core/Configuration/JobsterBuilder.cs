@@ -15,6 +15,7 @@ namespace Orchestnation.Core.Configuration
 {
     public class JobsterBuilder<T> where T : IJobsterContext
     {
+        private const string JobstersDefaultGroup = "jobsters-default-group";
         private readonly IConfiguration<T> _configuration;
         private readonly IList<IJobsterAsync<T>> _jobsterData = new List<IJobsterAsync<T>>();
         private readonly ILogger _logger;
@@ -45,14 +46,21 @@ namespace Orchestnation.Core.Configuration
             return this;
         }
 
-        public JobsterBuilder<T> AddJobsters(params IJobsterAsync<T>[] jobsterAsync)
+        public JobsterBuilder<T> AddJobsters(
+            string groupId,
+            params IJobsterAsync<T>[] jobsterAsync)
         {
             Guard.Argument(jobsterAsync, nameof(jobsterAsync)).NotNull();
+            groupId ??= JobstersDefaultGroup;
 
             foreach (IJobsterAsync<T> jobster in jobsterAsync)
             {
-                if (!IsAdded(jobster))
-                    _jobsterData.Add(jobster);
+                Guard.Argument(jobster, nameof(jobster)).NotNull();
+                if (IsAdded(groupId, jobster))
+                    continue;
+
+                jobster.GroupId = groupId;
+                _jobsterData.Add(jobster);
             }
 
             return this;
@@ -91,10 +99,13 @@ namespace Orchestnation.Core.Configuration
             return _jobsterData.Count;
         }
 
-        private bool IsAdded(IJobsterAsync<T> jobsterAsync)
+        private bool IsAdded(
+            string groupId,
+            IJobsterAsync<T> jobsterAsync)
         {
             return _jobsterData
-                .Any(p => p.JobId == jobsterAsync.JobId);
+                .Any(p => p.JobId == jobsterAsync.JobId
+                          && p.GroupId == groupId);
         }
     }
 }

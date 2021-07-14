@@ -241,7 +241,7 @@ namespace Orchestnation.Core.Tests.Engines
             };
 
             Assert.ThrowsAsync<CircularDependencyException>(async () => await new JobsterBuilder<CoreTestContext>(_mockLogger)
-                .AddJobsters(jobsters.ToArray())
+                .AddJobsters(null, jobsters.ToArray())
                 .BuildEngine()
                 .ScheduleJobstersAsync(_cancellationTokenSource.Token));
         }
@@ -277,7 +277,7 @@ namespace Orchestnation.Core.Tests.Engines
             JobsterBuilder<CoreTestContext> builder = new JobsterBuilder<CoreTestContext>(_mockLogger)
                .AddBatchSize(batchSize)
                .AddExceptionPolicy(exceptionPolicy)
-               .AddJobsters(jobsters.ToArray())
+               .AddJobsters(null, jobsters.ToArray())
                .AddStateHandler(stateHandler ?? new MemoryJobsterStateHandler<CoreTestContext>(
                    state ?? new IJobsterAsync<CoreTestContext>[0]));
             if (progressNotifier != null)

@@ -41,7 +41,7 @@ namespace Orchestnation.Consumer
 
             IOrchestnationEngine<ConsumerContext> jobsterEngine = new JobsterBuilder<ConsumerContext>(logger)
                 .AddBatchSize(10)
-                .AddJobsters(jobsters.ToArray())
+                .AddJobsters(null, jobsters.ToArray())
                 .AddProgressNotifier(progressNotifier)
                 .AddStateHandler(new FileJobsterStateHandler<ConsumerContext>(@"saved_state.json"))
                 .BuildEngine();
