@@ -1,4 +1,5 @@
 ﻿using Orchestnation.Core.Contexts;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,7 +7,7 @@ namespace Orchestnation.Core.Jobsters
 {
     public class Jobsters<T> where T : IJobsterContext
     {
-        public Jobsters(IList<IJobsterAsync<T>> jobstersAsync, bool restoredState = false)
+        public Jobsters(BlockingCollection<IJobsterAsync<T>> jobstersAsync, bool restoredState = false)
         {
             JobstersAsync = jobstersAsync;
 
@@ -19,7 +20,14 @@ namespace Orchestnation.Core.Jobsters
             }
         }
 
-        public IList<IJobsterAsync<T>> JobstersAsync { get; set; }
+        public BlockingCollection<IJobsterAsync<T>> JobstersAsync { get; }
+
+        public bool AreAllFinished()
+        {
+            return JobstersAsync
+                .All(p => p.Status == JobsterStatusEnum.Completed
+                          || p.Status == JobsterStatusEnum.Failed);
+        }
 
         public IEnumerable<IJobsterAsync<T>> GetNoDependencyJobsters()
         {

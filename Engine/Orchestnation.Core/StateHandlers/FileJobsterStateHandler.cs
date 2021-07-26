@@ -1,8 +1,9 @@
-﻿using Newtonsoft.Json;
-using Orchestnation.Core.Contexts;
+﻿using Orchestnation.Core.Contexts;
 using Orchestnation.Core.Jobsters;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Orchestnation.Core.StateHandlers
@@ -12,10 +13,10 @@ namespace Orchestnation.Core.StateHandlers
         private readonly object _lock = new object();
         private readonly string _path;
 
-        private readonly JsonSerializerSettings _serializerSettings = new JsonSerializerSettings
+        private readonly JsonSerializerOptions _serializerSettings = new JsonSerializerOptions
         {
-            PreserveReferencesHandling = PreserveReferencesHandling.Objects,
-            TypeNameHandling = TypeNameHandling.Auto
+            WriteIndented = true,
+            ReferenceHandler = ReferenceHandler.Preserve
         };
 
         public FileJobsterStateHandler(string path)
@@ -29,10 +30,7 @@ namespace Orchestnation.Core.StateHandlers
             {
                 File.WriteAllText(
                     _path,
-                    JsonConvert.SerializeObject(
-                        jobsters,
-                        Formatting.Indented,
-                        _serializerSettings));
+                    JsonSerializer.Serialize(jobsters, _serializerSettings));
             }
 
             return Task.CompletedTask;
@@ -44,7 +42,7 @@ namespace Orchestnation.Core.StateHandlers
                 return Task.FromResult(new IJobsterAsync<T>[0]);
 
             string savedState = File.ReadAllText(_path);
-            return Task.FromResult(JsonConvert.DeserializeObject<IJobsterAsync<T>[]>(
+            return Task.FromResult(JsonSerializer.Deserialize<IJobsterAsync<T>[]>(
                 savedState,
                 // ReSharper disable once InconsistentlySynchronizedField
                 _serializerSettings));

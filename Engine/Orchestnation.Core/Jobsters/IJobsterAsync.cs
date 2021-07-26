@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Orchestnation.Core.Contexts;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Orchestnation.Core.Jobsters

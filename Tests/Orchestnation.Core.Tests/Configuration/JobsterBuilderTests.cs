@@ -37,7 +37,7 @@ namespace Orchestnation.Core.Tests.Configuration
 
             Assert.DoesNotThrow(() => _jobsterBuilder.AddJobsters(null, jobster));
             Assert.AreEqual(
-                JobsterBuilder<CoreTestContext>.JobstersDefaultGroup,
+                JobsterManager<CoreTestContext>.JobstersDefaultGroup,
                 jobster.GroupId);
         }
 

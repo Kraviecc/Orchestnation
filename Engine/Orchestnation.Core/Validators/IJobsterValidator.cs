@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Orchestnation.Core.Contexts;
 using Orchestnation.Core.Jobsters;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace Orchestnation.Core.Validators
 {
@@ -9,6 +9,6 @@ namespace Orchestnation.Core.Validators
     {
         ILogger Logger { get; set; }
 
-        void Validate(IList<IJobsterAsync<T>> jobsterMetadata);
+        void Validate(BlockingCollection<IJobsterAsync<T>> jobsterMetadata);
     }
 }
