@@ -2,7 +2,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 using Orchestnation.Core.Configuration;
-using Orchestnation.Core.Jobsters;
 using Orchestnation.Core.Notifiers;
 using Orchestnation.Core.StateHandlers;
 using Orchestnation.Core.Tests.Models;
@@ -15,15 +14,31 @@ namespace Orchestnation.Core.Tests.Configuration
         private JobsterBuilder<CoreTestContext> _jobsterBuilder;
 
         [Test]
+        public void Configuration_BasicConfiguration_ShouldAddDuplicatedJobstersToDifferentGroups()
+        {
+            TestJobster jobster = new TestJobster(new CoreTestContext());
+            TestJobster jobster2 = new TestJobster(new CoreTestContext());
+            _jobsterBuilder.AddJobsters("group1", jobster2, jobster);
+            _jobsterBuilder.AddJobsters(null, jobster2, jobster);
+
+            Assert.AreEqual(4, _jobsterBuilder.GetJobstersNumber());
+        }
+
+        [Test]
         public void Configuration_BasicConfiguration_ShouldBuildEngine()
         {
             Assert.NotNull(_jobsterBuilder.BuildEngine());
         }
 
         [Test]
-        public void Configuration_BasicConfiguration_ShouldLetAddJobsters()
+        public void Configuration_BasicConfiguration_ShouldLetAddJobstersToDefaultGroup()
         {
-            Assert.DoesNotThrow(() => _jobsterBuilder.AddJobsters(new IJobsterAsync<CoreTestContext>[1]));
+            TestJobster jobster = new TestJobster(new CoreTestContext());
+
+            Assert.DoesNotThrow(() => _jobsterBuilder.AddJobsters(null, jobster));
+            Assert.AreEqual(
+                JobsterManager<CoreTestContext>.JobstersDefaultGroup,
+                jobster.GroupId);
         }
 
         [Test]
@@ -45,11 +60,11 @@ namespace Orchestnation.Core.Tests.Configuration
         }
 
         [Test]
-        public void Configuration_BasicConfiguration_ShouldNotAddDuplicatedJobsters()
+        public void Configuration_BasicConfiguration_ShouldNotAddDuplicatedJobstersToDefaultGroup()
         {
             TestJobster jobster = new TestJobster(new CoreTestContext());
             TestJobster jobster2 = new TestJobster(new CoreTestContext());
-            _jobsterBuilder.AddJobsters(jobster, jobster2, jobster);
+            _jobsterBuilder.AddJobsters(null, jobster, jobster2, jobster);
 
             Assert.AreEqual(2, _jobsterBuilder.GetJobstersNumber());
         }
@@ -57,7 +72,7 @@ namespace Orchestnation.Core.Tests.Configuration
         [Test]
         public void Configuration_BasicConfiguration_ShouldThrowExceptionWhenAddingNullJobsters()
         {
-            Assert.Throws<ArgumentNullException>(() => _jobsterBuilder.AddJobsters(null));
+            Assert.Throws<ArgumentNullException>(() => _jobsterBuilder.AddJobsters(null, null));
         }
 
         [Test]

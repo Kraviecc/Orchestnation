@@ -27,7 +27,7 @@ namespace Orchestnation.Consumer
             ILogger<ConsumerJobster> jobsterLogger = loggerFactory.CreateLogger<ConsumerJobster>();
 
             LocalEventProgressNotifier<ConsumerContext> progressNotifier = new LocalEventProgressNotifier<ConsumerContext>();
-            progressNotifier.NotifyEvent += (jobster, progress) =>
+            progressNotifier.OnJobsterFinishedNotifyEvent += (jobster, progress) =>
                 logger.LogInformation($"Jobster with ID={jobster.JobId} has finished. Current progress: {progress.Completed}/{progress.All}");
 
             ConsumerContext consumerContext = new ConsumerContext();
@@ -41,7 +41,7 @@ namespace Orchestnation.Consumer
 
             IOrchestnationEngine<ConsumerContext> jobsterEngine = new JobsterBuilder<ConsumerContext>(logger)
                 .AddBatchSize(10)
-                .AddJobsters(jobsters.ToArray())
+                .AddJobsters(null, jobsters.ToArray())
                 .AddProgressNotifier(progressNotifier)
                 .AddStateHandler(new FileJobsterStateHandler<ConsumerContext>(@"saved_state.json"))
                 .BuildEngine();

@@ -2,7 +2,7 @@
 using Orchestnation.Common.Logic;
 using Orchestnation.Core.Contexts;
 using Orchestnation.Core.Jobsters;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 
 namespace Orchestnation.Core.Validators
@@ -16,7 +16,7 @@ namespace Orchestnation.Core.Validators
 
         public ILogger Logger { get; set; }
 
-        public void Validate(IList<IJobsterAsync<T>> jobsterMetadata)
+        public void Validate(BlockingCollection<IJobsterAsync<T>> jobsterMetadata)
         {
             Logger.LogInformation("Validating dependencies");
             _ = jobsterMetadata.TopologicalSort(

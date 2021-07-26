@@ -36,6 +36,39 @@ namespace Orchestnation.Core.Tests.Engines
         }
 
         [Test]
+        public async Task Engines_BasicEngine_ShouldExecuteAdHocJobsters()
+        {
+            const int jobsterCount = 100;
+            const int adHocJobsterCount = 50;
+            CoreTestContext context = new CoreTestContext();
+            IOrchestnationEngine<CoreTestContext> engine = new JobsterBuilder<CoreTestContext>(_mockLogger)
+                .AddBatchSize(25)
+                .AddExceptionPolicy(ExceptionPolicy.ThrowImmediately)
+                .AddStateHandler(new MemoryJobsterStateHandler<CoreTestContext>(
+                    new IJobsterAsync<CoreTestContext>[0]))
+                .AddJobsters(null, CreateLongRunningJobsters(jobsterCount, context).ToArray())
+                .BuildEngine();
+
+            Task<IList<IJobsterAsync<CoreTestContext>>> tasks = engine
+                .ScheduleJobstersAsync(_cancellationTokenSource.Token);
+
+            Task<IList<IJobsterAsync<CoreTestContext>>> allTasks = engine
+                .AddJobsters(
+                    _cancellationTokenSource.Token,
+                    null,
+                    CreateLongRunningJobsters(adHocJobsterCount, context).ToArray());
+            await Task.WhenAll(tasks, allTasks);
+
+            const int allJobsters = jobsterCount + adHocJobsterCount;
+            Assert.AreEqual(allJobsters, allTasks.Result.Count);
+            Assert.IsFalse(allTasks.Result
+                .Any(p => p.Status == JobsterStatusEnum.Executing));
+            Assert.IsFalse(allTasks.Result
+                .Any(p => p.Status == JobsterStatusEnum.NotStarted));
+            Assert.AreEqual(allJobsters, context.Counter);
+        }
+
+        [Test]
         [TestCase(true, TestName = "More jobsters than batch size")]
         [TestCase(false, TestName = "Less jobsters than batch size")]
         public async Task Engines_BasicEngine_ShouldExecuteAllJobsters(
@@ -105,12 +138,38 @@ namespace Orchestnation.Core.Tests.Engines
         }
 
         [Test]
+        public async Task Engines_BasicEngine_ShouldReportErrorProgress()
+        {
+            bool wasNotified = false;
+            bool wasGroupNotified = false;
+            const int jobsterCount = 100;
+            LocalEventProgressNotifier<CoreTestContext> progressNotifier = new LocalEventProgressNotifier<CoreTestContext>();
+            progressNotifier.OnJobsterErrorNotifyEvent += (ex, jobster, progress) => wasNotified = true;
+            progressNotifier.OnJobsterGroupErrorNotifyEvent += (ex, groupId, jobsters, progress) => wasGroupNotified = true;
+
+            _ = await ExecuteOrchestrator(
+                jobsterCount,
+                jobsterCount,
+                true,
+                ExceptionPolicy.NoThrow,
+                null,
+                null,
+                null,
+                progressNotifier);
+
+            Assert.IsTrue(wasNotified);
+            Assert.IsTrue(wasGroupNotified);
+        }
+
+        [Test]
         public async Task Engines_BasicEngine_ShouldReportProgress()
         {
             bool wasNotified = false;
+            bool wasGroupNotified = false;
             const int jobsterCount = 100;
             LocalEventProgressNotifier<CoreTestContext> progressNotifier = new LocalEventProgressNotifier<CoreTestContext>();
-            progressNotifier.NotifyEvent += (jobster, progress) => wasNotified = true;
+            progressNotifier.OnJobsterFinishedNotifyEvent += (jobster, progress) => wasNotified = true;
+            progressNotifier.OnJobsterGroupFinishedNotifyEvent += (groupId, jobsters, progress) => wasGroupNotified = true;
 
             _ = await ExecuteOrchestrator(
                 jobsterCount,
@@ -123,6 +182,7 @@ namespace Orchestnation.Core.Tests.Engines
                 progressNotifier);
 
             Assert.IsTrue(wasNotified);
+            Assert.IsTrue(wasGroupNotified);
         }
 
         [Test]
@@ -150,7 +210,7 @@ namespace Orchestnation.Core.Tests.Engines
                 jobsterCount,
                 jobsterCount,
                 false,
-                ExceptionPolicy.NoThrow,
+                ExceptionPolicy.ThrowImmediately,
                 null,
                 completedState);
 
@@ -200,7 +260,7 @@ namespace Orchestnation.Core.Tests.Engines
         {
             Assert.Throws<ArgumentNullException>(() => new BasicEngine<CoreTestContext>(
                 _mockLogger,
-                new List<IJobsterAsync<CoreTestContext>>(0),
+                new JobsterManager<CoreTestContext>(),
                 null));
         }
 
@@ -209,7 +269,7 @@ namespace Orchestnation.Core.Tests.Engines
         {
             Assert.Throws<ArgumentNullException>(() => new BasicEngine<CoreTestContext>(
                 _mockLogger,
-                new List<IJobsterAsync<CoreTestContext>>(0),
+                new JobsterManager<CoreTestContext>(),
                 new BasicConfiguration<CoreTestContext>(
                     null,
                     new IJobsterValidator<CoreTestContext>[0])));
@@ -241,7 +301,7 @@ namespace Orchestnation.Core.Tests.Engines
             };
 
             Assert.ThrowsAsync<CircularDependencyException>(async () => await new JobsterBuilder<CoreTestContext>(_mockLogger)
-                .AddJobsters(jobsters.ToArray())
+                .AddJobsters(null, jobsters.ToArray())
                 .BuildEngine()
                 .ScheduleJobstersAsync(_cancellationTokenSource.Token));
         }
@@ -251,6 +311,19 @@ namespace Orchestnation.Core.Tests.Engines
         {
             _mockLogger = new Mock<ILogger>().Object;
             _cancellationTokenSource = new CancellationTokenSource();
+        }
+
+        private static IEnumerable<IJobsterAsync<CoreTestContext>> CreateLongRunningJobsters(
+            int jobsterCount,
+            CoreTestContext context)
+        {
+            IList<IJobsterAsync<CoreTestContext>> jobsters = new List<IJobsterAsync<CoreTestContext>>(jobsterCount);
+            for (int i = 0; i < jobsterCount; i++)
+            {
+                jobsters.Add(new TestJobster(context, false, null, true));
+            }
+
+            return jobsters;
         }
 
         private async Task<CoreTestContext> ExecuteOrchestrator(
@@ -277,7 +350,7 @@ namespace Orchestnation.Core.Tests.Engines
             JobsterBuilder<CoreTestContext> builder = new JobsterBuilder<CoreTestContext>(_mockLogger)
                .AddBatchSize(batchSize)
                .AddExceptionPolicy(exceptionPolicy)
-               .AddJobsters(jobsters.ToArray())
+               .AddJobsters(null, jobsters.ToArray())
                .AddStateHandler(stateHandler ?? new MemoryJobsterStateHandler<CoreTestContext>(
                    state ?? new IJobsterAsync<CoreTestContext>[0]));
             if (progressNotifier != null)

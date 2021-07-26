@@ -31,7 +31,7 @@ namespace Orchestnation.Core.Executors
 
             foreach (IProgressNotifier<T> progressNotifier in progressNotifiers)
             {
-                progressNotifier.Notify(jobsterAsync, progressModel);
+                progressNotifier.OnJobsterFinished(jobsterAsync, progressModel);
             }
         }
     }

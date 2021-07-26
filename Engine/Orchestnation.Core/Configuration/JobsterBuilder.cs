@@ -8,15 +8,13 @@ using Orchestnation.Core.Models;
 using Orchestnation.Core.Notifiers;
 using Orchestnation.Core.StateHandlers;
 using Orchestnation.Core.Validators;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Orchestnation.Core.Configuration
 {
     public class JobsterBuilder<T> where T : IJobsterContext
     {
         private readonly IConfiguration<T> _configuration;
-        private readonly IList<IJobsterAsync<T>> _jobsterData = new List<IJobsterAsync<T>>();
+        private readonly JobsterManager<T> _jobsterManager = new JobsterManager<T>();
         private readonly ILogger _logger;
         private IJobsterStateHandler<T> _jobsterStateHandler;
 
@@ -45,15 +43,11 @@ namespace Orchestnation.Core.Configuration
             return this;
         }
 
-        public JobsterBuilder<T> AddJobsters(params IJobsterAsync<T>[] jobsterAsync)
+        public JobsterBuilder<T> AddJobsters(
+            string groupId,
+            params IJobsterAsync<T>[] jobsterAsync)
         {
-            Guard.Argument(jobsterAsync, nameof(jobsterAsync)).NotNull();
-
-            foreach (IJobsterAsync<T> jobster in jobsterAsync)
-            {
-                if (!IsAdded(jobster))
-                    _jobsterData.Add(jobster);
-            }
+            _jobsterManager.AddJobsters(OrchestnationStatus.Builder, groupId, jobsterAsync);
 
             return this;
         }
@@ -81,20 +75,14 @@ namespace Orchestnation.Core.Configuration
             _logger.LogInformation("Building basic engine...");
             return new BasicEngine<T>(
                 _logger,
-                _jobsterData,
+                _jobsterManager,
                 _configuration,
                 _jobsterStateHandler);
         }
 
         public int GetJobstersNumber()
         {
-            return _jobsterData.Count;
-        }
-
-        private bool IsAdded(IJobsterAsync<T> jobsterAsync)
-        {
-            return _jobsterData
-                .Any(p => p.JobId == jobsterAsync.JobId);
+            return _jobsterManager.GetJobstersNumber();
         }
     }
 }

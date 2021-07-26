@@ -10,6 +10,7 @@ using Orchestnation.Core.Notifiers;
 using Orchestnation.Core.StateHandlers;
 using Orchestnation.Core.Validators;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -21,6 +22,7 @@ namespace Orchestnation.Core.Engines
     {
         private readonly IConfiguration<T> _configuration;
         private readonly JobsterFailureModel _jobsterFailureModel = new JobsterFailureModel();
+        private readonly JobsterManager<T> _jobsterManager;
         private readonly IJobsterStateHandler<T> _jobsterStateHandler;
         private readonly IList<Task> _jobsterTasks;
         private readonly ILogger _logger;
@@ -29,11 +31,14 @@ namespace Orchestnation.Core.Engines
 
         public BasicEngine(
             ILogger logger,
-            IList<IJobsterAsync<T>> jobstersAsync,
+            JobsterManager<T> jobsterManager,
             IConfiguration<T> configuration,
             IJobsterStateHandler<T> jobsterStateHandler = null)
         {
-            Guard.Argument(jobstersAsync)
+            Guard.Argument(jobsterManager)
+                .NotNull();
+            BlockingCollection<IJobsterAsync<T>> jobsterAsync = jobsterManager.GetJobsterAsync();
+            Guard.Argument(jobsterAsync)
                 .NotNull();
             Guard.Argument(configuration)
                 .NotNull()
@@ -42,19 +47,121 @@ namespace Orchestnation.Core.Engines
 
             _logger = logger;
             _configuration = configuration;
-            _jobsters = new Jobsters<T>(jobstersAsync);
-            _jobsterTasks = new List<Task>(jobstersAsync.Count);
-            _jobsterProgressModel = new JobsterProgressModel(jobstersAsync.Count);
+            _jobsters = new Jobsters<T>(jobsterAsync);
+            _jobsterManager = jobsterManager;
+            _jobsterTasks = new List<Task>(jobsterAsync.Count);
+            _jobsterProgressModel = new JobsterProgressModel(jobsterAsync.Count);
             _jobsterStateHandler = jobsterStateHandler;
 
             configuration.JobsterExecutor.JobsterFinishedEvent += OnJobsterFinished;
         }
 
-        public async Task<IList<IJobsterAsync<T>>> ScheduleJobstersAsync(CancellationToken cancellationToken)
+        public async Task<IList<IJobsterAsync<T>>> AddJobsters(
+            CancellationToken cancellationToken,
+            string groupId,
+            params IJobsterAsync<T>[] jobsterAsync)
+        {
+            _jobsterManager.AddJobsters(OrchestnationStatus.Engine, groupId, jobsterAsync);
+
+            if (!_jobsters.AreAllFinished())
+                return _jobsterManager.GetAllJobsterAsync();
+
+            return await ScheduleJobstersInternalAsync(cancellationToken);
+        }
+
+        public async Task<IList<IJobsterAsync<T>>> ScheduleJobstersAsync(
+            CancellationToken cancellationToken)
         {
             await RestoreState();
             Validate();
 
+            return await ScheduleJobstersInternalAsync(cancellationToken);
+        }
+
+        private void NotifyErrors(
+            Exception ex,
+            IJobsterAsync<T> jobsterAsync,
+            IJobsterAsync<T>[] groupJobsters)
+        {
+            foreach (IProgressNotifier<T> progressNotifier in _configuration.ProgressNotifiers)
+            {
+                progressNotifier.OnJobsterError(
+                    ex,
+                    jobsterAsync,
+                    _jobsterProgressModel);
+                progressNotifier.OnJobsterGroupError(
+                    ex,
+                    jobsterAsync.GroupId,
+                    groupJobsters,
+                    _jobsterProgressModel);
+            }
+        }
+
+        private void NotifyGroupFinished(
+            IJobsterAsync<T> jobsterAsync,
+            IJobsterAsync<T>[] groupJobsters)
+        {
+            foreach (IProgressNotifier<T> progressNotifier in _configuration.ProgressNotifiers)
+            {
+                progressNotifier.OnJobsterGroupFinished(
+                    jobsterAsync.GroupId,
+                    groupJobsters,
+                    _jobsterProgressModel);
+            }
+        }
+
+        private async Task OnJobsterFinished(
+            IJobsterAsync<T> jobsterAsync,
+            JobsterStatusEnum status,
+            Exception ex = null)
+        {
+            jobsterAsync.Status = status;
+            _jobsterProgressModel.ReportJobsterFinished(status);
+            IJobsterAsync<T>[] groupJobsters = _jobsters.JobstersAsync
+                .Where(p => p.GroupId == jobsterAsync.GroupId)
+                .ToArray();
+            if (_jobsters.IsGroupFinished(jobsterAsync.GroupId))
+                NotifyGroupFinished(jobsterAsync, groupJobsters);
+
+            await _jobsterStateHandler.PersistState(_jobsters.JobstersAsync);
+
+            if (status != JobsterStatusEnum.Failed)
+                return;
+
+            _jobsterFailureModel.SetIsError(jobsterAsync.JobId, ex);
+            NotifyErrors(ex, jobsterAsync, groupJobsters);
+        }
+
+        private async Task RestoreState()
+        {
+            if (_jobsterStateHandler == null)
+                return;
+
+            IEnumerable<IJobsterAsync<T>> jobsters = await _jobsterStateHandler.RestoreState();
+            if (!jobsters.Any(
+                p => p.Status == JobsterStatusEnum.Executing || p.Status == JobsterStatusEnum.NotStarted))
+                return;
+
+            BlockingCollection<IJobsterAsync<T>> blockingJobsters = new BlockingCollection<IJobsterAsync<T>>(jobsters.Count());
+            foreach (IJobsterAsync<T> jobster in jobsters)
+            {
+                jobster.Logger = _logger;
+                blockingJobsters.Add(jobster);
+            }
+            _jobsterManager.RestoreJobsters(blockingJobsters);
+            _jobsters = new Jobsters<T>(blockingJobsters, true);
+            _jobsterProgressModel = new JobsterProgressModel(
+                _jobsters.JobstersAsync
+                    .Count(
+                        p => p.Status == JobsterStatusEnum.NotStarted
+                             || p.Status == JobsterStatusEnum.Executing));
+            _logger.LogInformation("Previous state has been restored, resuming jobsters...");
+        }
+
+        private async Task<IList<IJobsterAsync<T>>> ScheduleJobstersInternalAsync(
+            CancellationToken cancellationToken)
+        {
+            _jobsterManager.ApplyAdHocJobsters();
             IEnumerable<IJobsterAsync<T>> initialJobsters = _jobsters.GetNoDependencyJobsters();
             foreach (IJobsterAsync<T> jobsterMetadata in initialJobsters)
             {
@@ -64,11 +171,12 @@ namespace Orchestnation.Core.Engines
                     break;
 
                 jobsterMetadata.Status = JobsterStatusEnum.Executing;
-                _jobsterTasks.Add(_configuration.JobsterExecutor.ExecuteAsync(
-                    jobsterMetadata,
-                    null,
-                    _configuration.ProgressNotifiers,
-                    _jobsterProgressModel));
+                _jobsterTasks.Add(
+                    _configuration.JobsterExecutor.ExecuteAsync(
+                        jobsterMetadata,
+                        null,
+                        _configuration.ProgressNotifiers,
+                        _jobsterProgressModel));
             }
 
             do
@@ -91,6 +199,8 @@ namespace Orchestnation.Core.Engines
                     _logger.LogInformation("Jobsters cancelled by the user.");
                     break;
                 }
+
+                _jobsterManager.ApplyAdHocJobsters();
 
                 IJobsterAsync<T> jobsterToSchedule =
                     _jobsters.JobstersAsync
@@ -118,56 +228,18 @@ namespace Orchestnation.Core.Engines
                                                       || p.Status == JobsterStatusEnum.Executing));
 
             await Task.WhenAll(_jobsterTasks);
+            if (_jobsterManager.IsAnyAdHocJobsterPending()
+                && !cancellationToken.IsCancellationRequested)
+                return await ScheduleJobstersInternalAsync(cancellationToken);
+
             _logger.LogInformation("All jobsters completed. Job is done.");
 
             if (_jobsterFailureModel.IsError
                && _configuration.ExceptionPolicy == ExceptionPolicy.ThrowAtTheEnd)
                 throw new JobsterException(_jobsterFailureModel);
 
-            return _jobsters.JobstersAsync;
-        }
-
-        private async Task OnJobsterFinished(
-            IJobsterAsync<T> jobsterAsync,
-            JobsterStatusEnum status,
-            Exception ex = null)
-        {
-            jobsterAsync.Status = status;
-            _jobsterProgressModel.ReportJobsterFinished(status);
-            await _jobsterStateHandler.PersistState(_jobsters.JobstersAsync);
-
-            if (status != JobsterStatusEnum.Failed)
-                return;
-
-            _jobsterFailureModel.SetIsError(jobsterAsync.JobId, ex);
-        }
-
-        private async Task RestoreState()
-        {
-            if (_jobsterStateHandler == null)
-                return;
-
-            IEnumerable<IJobsterAsync<T>> jobsters = await _jobsterStateHandler.RestoreState();
-            if (!jobsters.Any(
-                p => p.Status == JobsterStatusEnum.Executing || p.Status == JobsterStatusEnum.NotStarted))
-                return;
-
-            _jobsters = new Jobsters<T>(
-                jobsters
-                    .Select(
-                        p =>
-                        {
-                            p.Logger = _logger;
-                            return p;
-                        })
-                    .ToList(),
-                true);
-            _jobsterProgressModel = new JobsterProgressModel(
-                _jobsters.JobstersAsync
-                    .Count(
-                        p => p.Status == JobsterStatusEnum.NotStarted
-                             || p.Status == JobsterStatusEnum.Executing));
-            _logger.LogInformation("Previous state has been restored, resuming jobsters...");
+            return _jobsters.JobstersAsync
+                .ToList();
         }
 
         private async Task ThrottleJobsters()
