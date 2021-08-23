@@ -8,18 +8,13 @@ namespace Orchestnation.Core.StateHandlers
 {
     public class MemoryJobsterStateHandler<T> : IJobsterStateHandler<T> where T : IJobsterContext
     {
-        private readonly object _lock = new object();
+        private readonly object _lock = new();
 
         private IEnumerable<IJobsterAsync<T>> _stateReference;
 
         public MemoryJobsterStateHandler(IEnumerable<IJobsterAsync<T>> stateReference)
         {
             _stateReference = stateReference;
-        }
-
-        public IEnumerable<IJobsterAsync<T>> GetState()
-        {
-            return _stateReference;
         }
 
         public Task PersistState(IEnumerable<IJobsterAsync<T>> jobsters)
@@ -35,6 +30,11 @@ namespace Orchestnation.Core.StateHandlers
         public Task<IJobsterAsync<T>[]> RestoreState()
         {
             return Task.FromResult(_stateReference?.ToArray());
+        }
+
+        public IEnumerable<IJobsterAsync<T>> GetState()
+        {
+            return _stateReference;
         }
     }
 }

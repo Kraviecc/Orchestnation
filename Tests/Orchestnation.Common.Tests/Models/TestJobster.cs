@@ -10,12 +10,15 @@ namespace Orchestnation.Common.Tests.Models
         public TestJobster(TestJobsterContext context, string[] requiredJobIds = null)
         {
             Context = context;
-            RequiredJobIds = requiredJobIds ?? new string[0];
+            RequiredJobIds = requiredJobIds ?? Array.Empty<string>();
         }
 
         public TestJobsterContext Context { get; set; }
         public string GroupId { get; set; }
-        public string JobId { get; set; } = Guid.NewGuid().ToString();
+
+        public string JobId { get; set; } = Guid.NewGuid()
+            .ToString();
+
         public ILogger Logger { get; set; }
         public string[] RequiredJobIds { get; set; }
         public JobsterStatusEnum Status { get; set; }

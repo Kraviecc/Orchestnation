@@ -21,7 +21,7 @@ namespace Orchestnation.Core.Engines
     public class BasicEngine<T> : IOrchestnationEngine<T> where T : IJobsterContext
     {
         private readonly IConfiguration<T> _configuration;
-        private readonly JobsterFailureModel _jobsterFailureModel = new JobsterFailureModel();
+        private readonly JobsterFailureModel _jobsterFailureModel = new();
         private readonly JobsterManager<T> _jobsterManager;
         private readonly IJobsterStateHandler<T> _jobsterStateHandler;
         private readonly IList<Task> _jobsterTasks;
@@ -42,7 +42,8 @@ namespace Orchestnation.Core.Engines
                 .NotNull();
             Guard.Argument(configuration)
                 .NotNull()
-                .Member(p => p.JobsterExecutor,
+                .Member(
+                    p => p.JobsterExecutor,
                     u => u.NotNull());
 
             _logger = logger;
@@ -64,7 +65,9 @@ namespace Orchestnation.Core.Engines
             _jobsterManager.AddJobsters(OrchestnationStatus.Engine, groupId, jobsterAsync);
 
             if (!_jobsters.AreAllFinished())
+            {
                 return _jobsterManager.GetAllJobsterAsync();
+            }
 
             return await ScheduleJobstersInternalAsync(cancellationToken);
         }
@@ -121,12 +124,16 @@ namespace Orchestnation.Core.Engines
                 .Where(p => p.GroupId == jobsterAsync.GroupId)
                 .ToArray();
             if (_jobsters.IsGroupFinished(jobsterAsync.GroupId))
+            {
                 NotifyGroupFinished(jobsterAsync, groupJobsters);
+            }
 
             await _jobsterStateHandler.PersistState(_jobsters.JobstersAsync);
 
             if (status != JobsterStatusEnum.Failed)
+            {
                 return;
+            }
 
             _jobsterFailureModel.SetIsError(jobsterAsync.JobId, ex);
             NotifyErrors(ex, jobsterAsync, groupJobsters);
@@ -135,19 +142,24 @@ namespace Orchestnation.Core.Engines
         private async Task RestoreState()
         {
             if (_jobsterStateHandler == null)
+            {
                 return;
+            }
 
             IEnumerable<IJobsterAsync<T>> jobsters = await _jobsterStateHandler.RestoreState();
             if (!jobsters.Any(
                 p => p.Status == JobsterStatusEnum.Executing || p.Status == JobsterStatusEnum.NotStarted))
+            {
                 return;
+            }
 
-            BlockingCollection<IJobsterAsync<T>> blockingJobsters = new BlockingCollection<IJobsterAsync<T>>(jobsters.Count());
+            BlockingCollection<IJobsterAsync<T>> blockingJobsters = new(jobsters.Count());
             foreach (IJobsterAsync<T> jobster in jobsters)
             {
                 jobster.Logger = _logger;
                 blockingJobsters.Add(jobster);
             }
+
             _jobsterManager.RestoreJobsters(blockingJobsters);
             _jobsters = new Jobsters<T>(blockingJobsters, true);
             _jobsterProgressModel = new JobsterProgressModel(
@@ -168,7 +180,9 @@ namespace Orchestnation.Core.Engines
                 await ThrottleJobsters();
 
                 if (cancellationToken.IsCancellationRequested)
+                {
                     break;
+                }
 
                 jobsterMetadata.Status = JobsterStatusEnum.Executing;
                 _jobsterTasks.Add(
@@ -186,7 +200,9 @@ namespace Orchestnation.Core.Engines
                     _logger.LogError($"Error has been thrown. Jobster errors:\n{_jobsterFailureModel.GetErrors()}");
 
                     if (_configuration.ExceptionPolicy == ExceptionPolicy.ThrowImmediately)
+                    {
                         throw new JobsterException(_jobsterFailureModel);
+                    }
 
                     break;
                 }
@@ -204,10 +220,11 @@ namespace Orchestnation.Core.Engines
 
                 IJobsterAsync<T> jobsterToSchedule =
                     _jobsters.JobstersAsync
-                        .FirstOrDefault(p => p.Status == JobsterStatusEnum.NotStarted
-                                    && !_jobsters.JobstersAsync.Any(
-                                        q => p.RequiredJobIds.Contains(q.JobId)
-                                             && q.Status != JobsterStatusEnum.Completed));
+                        .FirstOrDefault(
+                            p => p.Status == JobsterStatusEnum.NotStarted
+                                 && !_jobsters.JobstersAsync.Any(
+                                     q => p.RequiredJobIds.Contains(q.JobId)
+                                          && q.Status != JobsterStatusEnum.Completed));
                 if (jobsterToSchedule == null)
                 {
                     await Task.WhenAll(_jobsterTasks);
@@ -215,28 +232,34 @@ namespace Orchestnation.Core.Engines
                 }
 
                 jobsterToSchedule.Status = JobsterStatusEnum.Executing;
-                _jobsterTasks.Add(_configuration.JobsterExecutor.ExecuteAsync(
-                    jobsterToSchedule,
-                    _jobsters.JobstersAsync
-                        .Where(p => jobsterToSchedule.RequiredJobIds.Contains(p.JobId))
-                        .ToArray(),
-                    _configuration.ProgressNotifiers,
-                    _jobsterProgressModel));
+                _jobsterTasks.Add(
+                    _configuration.JobsterExecutor.ExecuteAsync(
+                        jobsterToSchedule,
+                        _jobsters.JobstersAsync
+                            .Where(p => jobsterToSchedule.RequiredJobIds.Contains(p.JobId))
+                            .ToArray(),
+                        _configuration.ProgressNotifiers,
+                        _jobsterProgressModel));
 
                 await Task.WhenAny(_jobsterTasks);
-            } while (_jobsters.JobstersAsync.Any(p => p.Status == JobsterStatusEnum.NotStarted
-                                                      || p.Status == JobsterStatusEnum.Executing));
+            } while (_jobsters.JobstersAsync.Any(
+                p => p.Status == JobsterStatusEnum.NotStarted
+                     || p.Status == JobsterStatusEnum.Executing));
 
             await Task.WhenAll(_jobsterTasks);
             if (_jobsterManager.IsAnyAdHocJobsterPending()
                 && !cancellationToken.IsCancellationRequested)
+            {
                 return await ScheduleJobstersInternalAsync(cancellationToken);
+            }
 
             _logger.LogInformation("All jobsters completed. Job is done.");
 
             if (_jobsterFailureModel.IsError
-               && _configuration.ExceptionPolicy == ExceptionPolicy.ThrowAtTheEnd)
+                && _configuration.ExceptionPolicy == ExceptionPolicy.ThrowAtTheEnd)
+            {
                 throw new JobsterException(_jobsterFailureModel);
+            }
 
             return _jobsters.JobstersAsync
                 .ToList();
@@ -245,7 +268,9 @@ namespace Orchestnation.Core.Engines
         private async Task ThrottleJobsters()
         {
             if (_configuration.BatchSize == 0)
+            {
                 return;
+            }
 
             while (_configuration.BatchSize <= _jobsterTasks.Count(p => !p.IsCompleted))
             {

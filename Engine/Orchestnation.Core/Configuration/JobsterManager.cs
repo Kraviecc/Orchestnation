@@ -11,48 +11,65 @@ namespace Orchestnation.Core.Configuration
     public class JobsterManager<T> where T : IJobsterContext
     {
         public const string JobstersDefaultGroup = "jobsters-default-group";
-        private BlockingCollection<IJobsterAsync<T>> _adHocJobsterData = new BlockingCollection<IJobsterAsync<T>>();
-        private BlockingCollection<IJobsterAsync<T>> _jobsterData = new BlockingCollection<IJobsterAsync<T>>();
+        private BlockingCollection<IJobsterAsync<T>> _adHocJobsterData = new();
+        private BlockingCollection<IJobsterAsync<T>> _jobsterData = new();
 
         public void AddJobsters(
             OrchestnationStatus orchestnationStatus,
             string groupId,
             params IJobsterAsync<T>[] jobsterAsync)
         {
-            Guard.Argument(jobsterAsync, nameof(jobsterAsync)).NotNull();
+            Guard.Argument(jobsterAsync, nameof(jobsterAsync))
+                .NotNull();
             groupId ??= JobstersDefaultGroup;
 
             foreach (IJobsterAsync<T> jobster in jobsterAsync)
             {
-                Guard.Argument(jobster, nameof(jobster)).NotNull();
+                Guard.Argument(jobster, nameof(jobster))
+                    .NotNull();
                 if (IsAdded(groupId, jobster))
+                {
                     continue;
+                }
 
                 jobster.GroupId = groupId;
                 if (orchestnationStatus == OrchestnationStatus.Builder)
+                {
                     _jobsterData.Add(jobster);
+                }
                 else
+                {
                     _adHocJobsterData.Add(jobster);
+                }
             }
         }
 
         public void ApplyAdHocJobsters()
         {
             if (!_adHocJobsterData.Any())
+            {
                 return;
+            }
 
             foreach (IJobsterAsync<T> jobster in _adHocJobsterData)
             {
                 _jobsterData.Add(jobster);
             }
+
             _adHocJobsterData = new BlockingCollection<IJobsterAsync<T>>();
         }
 
-        public IList<IJobsterAsync<T>> GetAllJobsterAsync() => _jobsterData
-            .Concat(_adHocJobsterData)
-            .ToList();
+        public IList<IJobsterAsync<T>> GetAllJobsterAsync()
+        {
+            return _jobsterData
+                .Concat(_adHocJobsterData)
+                .ToList();
+        }
 
-        public BlockingCollection<IJobsterAsync<T>> GetJobsterAsync() => _jobsterData;
+        public BlockingCollection<IJobsterAsync<T>> GetJobsterAsync()
+        {
+            return _jobsterData;
+        }
 
         public int GetJobstersNumber()
         {
@@ -77,8 +94,9 @@ namespace Orchestnation.Core.Configuration
             IJobsterAsync<T> jobsterAsync)
         {
             return jobsterList
-                .Any(p => p.JobId == jobsterAsync.JobId
-                          && p.GroupId == groupId);
+                .Any(
+                    p => p.JobId == jobsterAsync.JobId
+                         && p.GroupId == groupId);
         }
 
         private bool IsAdded(

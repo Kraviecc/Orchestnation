@@ -6,7 +6,9 @@ namespace Orchestnation.Common.Models
 {
     public class JobsterFailureModel
     {
-        private readonly IList<KeyValuePair<string, Exception>> _exceptions = new List<KeyValuePair<string, Exception>>();
+        private readonly IList<KeyValuePair<string, Exception>> _exceptions =
+            new List<KeyValuePair<string, Exception>>();
+
         public bool IsError { get; internal set; }
 
         public string GetErrors()
@@ -23,7 +25,9 @@ namespace Orchestnation.Common.Models
         {
             IsError = true;
             if (ex == null)
+            {
                 return;
+            }
 
             _exceptions.Add(new KeyValuePair<string, Exception>(jobsterId, ex));
         }

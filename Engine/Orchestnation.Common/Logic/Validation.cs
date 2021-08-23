@@ -20,7 +20,9 @@ namespace Orchestnation.Common.Logic
                 KeyValuePair<T, HashSet<T>> elem = elements
                     .FirstOrDefault(x => x.Value.Count == 0);
                 if (elem.Key == null)
+                {
                     throw new CircularDependencyException();
+                }
 
                 elements.Remove(elem.Key);
                 foreach (KeyValuePair<T, HashSet<T>> element in elements)

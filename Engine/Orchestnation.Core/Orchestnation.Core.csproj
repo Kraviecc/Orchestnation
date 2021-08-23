@@ -1,22 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <PackageId>Orchestnation</PackageId>
-    <Version>1.0.0</Version>
-    <Authors>Kraviecc</Authors>
-    <Product>Orchestnation</Product>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <PackageId>Orchestnation</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>Kraviecc</Authors>
+        <Product>Orchestnation</Product>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Dawn.Guard" Version="1.12.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
-    <PackageReference Include="System.Text.Json" Version="5.0.0" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Dawn.Guard" Version="1.12.0"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0"/>
+        <PackageReference Include="System.Text.Json" Version="5.0.0"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Orchestnation.Common\Orchestnation.Common.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Orchestnation.Common\Orchestnation.Common.csproj"/>
+    </ItemGroup>
 
 </Project>

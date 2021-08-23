@@ -1,18 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-  </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\Engine\Orchestnation.Common\Orchestnation.Common.csproj" />
-    <ProjectReference Include="..\..\Engine\Orchestnation.Core\Orchestnation.Core.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\Engine\Orchestnation.Common\Orchestnation.Common.csproj"/>
+        <ProjectReference Include="..\..\Engine\Orchestnation.Core\Orchestnation.Core.csproj"/>
+    </ItemGroup>
 
 </Project>

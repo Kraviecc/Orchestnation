@@ -34,7 +34,7 @@ namespace Orchestnation.Core.Tests.Configuration
         {
             _basicConfiguration = new BasicConfiguration<CoreTestContext>(
                 new LocalExecutor<CoreTestContext>(),
-                new IJobsterValidator<CoreTestContext>[0]);
+                Array.Empty<IJobsterValidator<CoreTestContext>>());
         }
     }
 }

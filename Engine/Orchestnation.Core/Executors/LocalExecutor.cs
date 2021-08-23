@@ -21,12 +21,16 @@ namespace Orchestnation.Core.Executors
             {
                 await jobsterAsync.ExecuteAsync(requiredJobsterAsync);
                 if (JobsterFinishedEvent != null)
+                {
                     await JobsterFinishedEvent?.Invoke(jobsterAsync, JobsterStatusEnum.Completed);
+                }
             }
             catch (Exception ex)
             {
                 if (JobsterFinishedEvent != null)
+                {
                     await JobsterFinishedEvent?.Invoke(jobsterAsync, JobsterStatusEnum.Failed, ex);
+                }
             }
 
             foreach (IProgressNotifier<T> progressNotifier in progressNotifiers)

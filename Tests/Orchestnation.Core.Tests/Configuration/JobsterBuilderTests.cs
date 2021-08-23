@@ -44,13 +44,17 @@ namespace Orchestnation.Core.Tests.Configuration
         [Test]
         public void Configuration_BasicConfiguration_ShouldLetAddProgressNotifier()
         {
-            Assert.DoesNotThrow(() => _jobsterBuilder.AddProgressNotifier(new LocalEventProgressNotifier<CoreTestContext>()));
+            Assert.DoesNotThrow(
+                () => _jobsterBuilder.AddProgressNotifier(
+                    new LocalEventProgressNotifier<CoreTestContext>()));
         }
 
         [Test]
         public void Configuration_BasicConfiguration_ShouldLetAddStateHandler()
         {
-            Assert.DoesNotThrow(() => _jobsterBuilder.AddStateHandler(new FileJobsterStateHandler<CoreTestContext>(string.Empty)));
+            Assert.DoesNotThrow(
+                () => _jobsterBuilder.AddStateHandler(
+                    new FileJobsterStateHandler<CoreTestContext>(string.Empty)));
         }
 
         [Test]

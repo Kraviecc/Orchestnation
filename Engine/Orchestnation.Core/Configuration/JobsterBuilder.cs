@@ -14,7 +14,7 @@ namespace Orchestnation.Core.Configuration
     public class JobsterBuilder<T> where T : IJobsterContext
     {
         private readonly IConfiguration<T> _configuration;
-        private readonly JobsterManager<T> _jobsterManager = new JobsterManager<T>();
+        private readonly JobsterManager<T> _jobsterManager = new();
         private readonly ILogger _logger;
         private IJobsterStateHandler<T> _jobsterStateHandler;
 
@@ -54,7 +54,8 @@ namespace Orchestnation.Core.Configuration
 
         public JobsterBuilder<T> AddProgressNotifier(IProgressNotifier<T> progressNotifier)
         {
-            Guard.Argument(progressNotifier, nameof(progressNotifier)).NotNull();
+            Guard.Argument(progressNotifier, nameof(progressNotifier))
+                .NotNull();
 
             _configuration.ProgressNotifiers.Add(progressNotifier);
 
@@ -63,7 +64,8 @@ namespace Orchestnation.Core.Configuration
 
         public JobsterBuilder<T> AddStateHandler(IJobsterStateHandler<T> jobsterStateHandler)
         {
-            Guard.Argument(jobsterStateHandler, nameof(jobsterStateHandler)).NotNull();
+            Guard.Argument(jobsterStateHandler, nameof(jobsterStateHandler))
+                .NotNull();
 
             _jobsterStateHandler = jobsterStateHandler;
 

@@ -12,7 +12,9 @@ namespace Orchestnation.Core.Jobsters
             JobstersAsync = jobstersAsync;
 
             if (restoredState)
+            {
                 return;
+            }
 
             foreach (IJobsterAsync<T> jobsterAsync in jobstersAsync)
             {
@@ -25,18 +27,21 @@ namespace Orchestnation.Core.Jobsters
         public bool AreAllFinished()
         {
             return JobstersAsync
-                .All(p => p.Status == JobsterStatusEnum.Completed
-                          || p.Status == JobsterStatusEnum.Failed);
+                .All(
+                    p => p.Status is JobsterStatusEnum.Completed or JobsterStatusEnum.Failed);
         }
 
         public IEnumerable<IJobsterAsync<T>> GetNoDependencyJobsters()
         {
-            return JobstersAsync.Where(p => p.Status == JobsterStatusEnum.NotStarted
-                                            && (p.RequiredJobIds == null
-                                                || p.RequiredJobIds.Length == 0
-                                                || JobstersAsync
-                                                    .Any(q => p.RequiredJobIds.Contains(q.JobId)
-                                                        && q.Status == JobsterStatusEnum.Completed || q.Status == JobsterStatusEnum.Failed)));
+            return JobstersAsync.Where(
+                p => p.Status == JobsterStatusEnum.NotStarted
+                     && (p.RequiredJobIds == null
+                         || p.RequiredJobIds.Length == 0
+                         || JobstersAsync
+                             .Any(
+                                 q => p.RequiredJobIds.Contains(q.JobId)
+                                      && q.Status == JobsterStatusEnum.Completed ||
+                                      q.Status == JobsterStatusEnum.Failed)));
         }
 
         public bool IsGroupFinished(string groupId)
