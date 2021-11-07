@@ -247,6 +247,74 @@ namespace Orchestnation.Core.Tests.Engines
         }
 
         [Test]
+        public async Task Engines_BasicEngine_ShouldRestorePartiallyCompletedSuborchestratorState()
+        {
+            const int batchSize = 1;
+            CoreTestContext context = new()
+            {
+                Counter = 1
+            };
+            CoreTestContext subContext = new()
+            {
+                Counter = 1
+            };
+            TestSubOrchestratorJobster initialJobster = new(
+                context,
+                _cancellationTokenSource.Token,
+                null,
+                ExceptionPolicy.ThrowImmediately,
+                batchSize,
+                null,
+                _mockLogger)
+            {
+                Status = JobsterStatusEnum.Completed
+            };
+            IJobsterAsync<CoreTestContext>[] completedState =
+            {
+                initialJobster,
+                new TestSubOrchestratorJobster(
+                    context,
+                    _cancellationTokenSource.Token,
+                    new[]
+                    {
+                        new TestJobster(subContext)
+                        {
+                            Status = JobsterStatusEnum.Completed
+                        },
+                        new TestJobster(subContext)
+                        {
+                            Status = JobsterStatusEnum.NotStarted
+                        },
+                        new TestJobster(subContext)
+                        {
+                            Status = JobsterStatusEnum.NotStarted
+                        }
+                    },
+                    ExceptionPolicy.ThrowImmediately,
+                    batchSize,
+                    null,
+                    _mockLogger)
+                {
+                    RequiredJobIds = new[] { initialJobster.JobId },
+                    Status = JobsterStatusEnum.NotStarted
+                }
+            };
+
+            JobsterBuilder<CoreTestContext> builder = new JobsterBuilder<CoreTestContext>(_mockLogger)
+                .AddBatchSize(batchSize)
+                .AddExceptionPolicy(ExceptionPolicy.ThrowImmediately)
+                .AddStateHandler(
+                    new MemoryJobsterStateHandler<CoreTestContext>(completedState));
+
+            _ = await builder
+                .BuildEngine()
+                .ScheduleJobstersAsync(_cancellationTokenSource.Token);
+
+            Assert.AreEqual(2, context.Counter);
+            Assert.AreEqual(3, subContext.Counter);
+        }
+
+        [Test]
         public async Task Engines_BasicEngine_ShouldSaveState()
         {
             const int jobsterCount = 100;
