@@ -21,7 +21,7 @@ namespace Orchestnation.Core.Validators
             Logger.LogInformation("Validating dependencies");
             _ = jobsterMetadata.TopologicalSort(
                     p => jobsterMetadata
-                        .Where(q => p.RequiredJobIds.Contains(q.JobId)))
+                        .Where(q => p.RequiredJobIds != null && p.RequiredJobIds.Contains(q.JobId)))
                 .ToArray();
             Logger.LogInformation("Validation successful");
         }

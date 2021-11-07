@@ -16,6 +16,6 @@ namespace Orchestnation.Core.Jobsters
         [JsonIgnore] ILogger Logger { get; set; }
         JobsterStatusEnum Status { get; set; }
 
-        Task<T> ExecuteAsync(IJobsterAsync<T>[] requiredJobsters);
+        Task<T> ExecuteAsync(OperationContext<T> operationOperationContext);
     }
 }

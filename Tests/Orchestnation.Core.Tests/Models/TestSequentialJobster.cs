@@ -5,22 +5,22 @@ using System.Threading.Tasks;
 
 namespace Orchestnation.Core.Tests.Models
 {
-    public class TestJobster : IJobsterAsync<CoreTestContext>
+    public class TestSequentialJobster : IJobsterAsync<CoreTestContext>
     {
-        private readonly int? _longRunningTimeout;
-        private readonly bool _throwException;
+        public const int MaxPageNumber = 9;
 
-        public TestJobster(
+        public TestSequentialJobster(
             CoreTestContext context,
-            bool throwException = false,
-            string[] requiredJobIds = null,
-            int? longRunningTimeoutTimeout = null)
+            int pageNumber,
+            string pagingCookie = null)
         {
-            _longRunningTimeout = longRunningTimeoutTimeout;
-            _throwException = throwException;
             Context = context;
-            RequiredJobIds = requiredJobIds ?? Array.Empty<string>();
+            PageNumber = pageNumber;
+            PagingCookie = pagingCookie;
         }
+
+        public int PageNumber { get; }
+        public string PagingCookie { get; }
 
         public CoreTestContext Context { get; set; }
         public string GroupId { get; set; }
@@ -34,17 +34,16 @@ namespace Orchestnation.Core.Tests.Models
 
         public async Task<CoreTestContext> ExecuteAsync(OperationContext<CoreTestContext> operationOperationContext)
         {
-            if (_throwException)
-            {
-                throw new Exception("Exception from jobster");
-            }
-
-            if (_longRunningTimeout.HasValue)
-            {
-                await Task.Delay(_longRunningTimeout.Value);
-            }
-
+            Console.WriteLine($"Processing page number {PageNumber}.");
             Context.Increment();
+
+            if (PageNumber < MaxPageNumber)
+            {
+                await operationOperationContext.Engine.AddJobsters(
+                    operationOperationContext.CancellationToken,
+                    GroupId,
+                    new TestSequentialJobster(Context, PageNumber + 1, "random paging cookie"));
+            }
 
             return Context;
         }

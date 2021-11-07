@@ -153,6 +153,16 @@ namespace Orchestnation.Core.Tests.Engines
         }
 
         [Test]
+        public async Task Engines_BasicEngine_ShouldProcessSequentialJobsters()
+        {
+            CoreTestContext result = await ExecuteSequentialOrchestrator(
+                1,
+                new CoreTestContext());
+
+            Assert.AreEqual(TestSequentialJobster.MaxPageNumber + 1, result.Counter);
+        }
+
+        [Test]
         public async Task Engines_BasicEngine_ShouldReportErrorProgress()
         {
             bool wasNotified = false;
@@ -386,6 +396,21 @@ namespace Orchestnation.Core.Tests.Engines
             {
                 builder.AddProgressNotifier(progressNotifier);
             }
+
+            _ = await builder
+                .BuildEngine()
+                .ScheduleJobstersAsync(_cancellationTokenSource.Token);
+
+            return context;
+        }
+
+        private async Task<CoreTestContext> ExecuteSequentialOrchestrator(
+            int batchSize,
+            CoreTestContext context)
+        {
+            JobsterBuilder<CoreTestContext> builder = new JobsterBuilder<CoreTestContext>(_mockLogger)
+                .AddBatchSize(batchSize)
+                .AddJobsters(null, new TestSequentialJobster(context, 0));
 
             _ = await builder
                 .BuildEngine()

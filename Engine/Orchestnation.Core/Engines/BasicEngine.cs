@@ -81,6 +81,20 @@ namespace Orchestnation.Core.Engines
             return await ScheduleJobstersInternalAsync(cancellationToken);
         }
 
+        private OperationContext<T> GetContextByJobster(
+            CancellationToken cancellationToken,
+            IJobsterAsync<T> jobsterToSchedule)
+        {
+            return new OperationContext<T>(
+                this,
+                cancellationToken,
+                _jobsters.JobstersAsync
+                    .Where(
+                        p => jobsterToSchedule.RequiredJobIds != null
+                             && jobsterToSchedule.RequiredJobIds.Contains(p.JobId))
+                    .ToArray());
+        }
+
         private void NotifyErrors(
             Exception ex,
             IJobsterAsync<T> jobsterAsync,
@@ -128,7 +142,10 @@ namespace Orchestnation.Core.Engines
                 NotifyGroupFinished(jobsterAsync, groupJobsters);
             }
 
-            await _jobsterStateHandler.PersistState(_jobsters.JobstersAsync);
+            if (_jobsterStateHandler != null)
+            {
+                await _jobsterStateHandler.PersistState(_jobsters.JobstersAsync);
+            }
 
             if (status != JobsterStatusEnum.Failed)
             {
@@ -148,7 +165,7 @@ namespace Orchestnation.Core.Engines
 
             IEnumerable<IJobsterAsync<T>> jobsters = await _jobsterStateHandler.RestoreState();
             if (!jobsters.Any(
-                p => p.Status == JobsterStatusEnum.Executing || p.Status == JobsterStatusEnum.NotStarted))
+                p => p.Status is JobsterStatusEnum.Executing or JobsterStatusEnum.NotStarted))
             {
                 return;
             }
@@ -165,8 +182,7 @@ namespace Orchestnation.Core.Engines
             _jobsterProgressModel = new JobsterProgressModel(
                 _jobsters.JobstersAsync
                     .Count(
-                        p => p.Status == JobsterStatusEnum.NotStarted
-                             || p.Status == JobsterStatusEnum.Executing));
+                        p => p.Status is JobsterStatusEnum.NotStarted or JobsterStatusEnum.Executing));
             _logger.LogInformation("Previous state has been restored, resuming jobsters...");
         }
 
@@ -187,10 +203,13 @@ namespace Orchestnation.Core.Engines
                 jobsterMetadata.Status = JobsterStatusEnum.Executing;
                 _jobsterTasks.Add(
                     _configuration.JobsterExecutor.ExecuteAsync(
-                        jobsterMetadata,
-                        null,
+                        new OperationContext<T>(
+                            this,
+                            cancellationToken,
+                            null),
                         _configuration.ProgressNotifiers,
-                        _jobsterProgressModel));
+                        _jobsterProgressModel,
+                        jobsterMetadata));
             }
 
             do
@@ -223,8 +242,8 @@ namespace Orchestnation.Core.Engines
                         .FirstOrDefault(
                             p => p.Status == JobsterStatusEnum.NotStarted
                                  && !_jobsters.JobstersAsync.Any(
-                                     q => p.RequiredJobIds.Contains(q.JobId)
-                                          && q.Status != JobsterStatusEnum.Completed));
+                                     q => p.RequiredJobIds != null && p.RequiredJobIds.Contains(q.JobId)
+                                                                   && q.Status != JobsterStatusEnum.Completed));
                 if (jobsterToSchedule == null)
                 {
                     await Task.WhenAll(_jobsterTasks);
@@ -234,17 +253,14 @@ namespace Orchestnation.Core.Engines
                 jobsterToSchedule.Status = JobsterStatusEnum.Executing;
                 _jobsterTasks.Add(
                     _configuration.JobsterExecutor.ExecuteAsync(
-                        jobsterToSchedule,
-                        _jobsters.JobstersAsync
-                            .Where(p => jobsterToSchedule.RequiredJobIds.Contains(p.JobId))
-                            .ToArray(),
+                        GetContextByJobster(cancellationToken, jobsterToSchedule),
                         _configuration.ProgressNotifiers,
-                        _jobsterProgressModel));
+                        _jobsterProgressModel,
+                        jobsterToSchedule));
 
                 await Task.WhenAny(_jobsterTasks);
             } while (_jobsters.JobstersAsync.Any(
-                p => p.Status == JobsterStatusEnum.NotStarted
-                     || p.Status == JobsterStatusEnum.Executing));
+                p => p.Status is JobsterStatusEnum.NotStarted or JobsterStatusEnum.Executing));
 
             await Task.WhenAll(_jobsterTasks);
             if (_jobsterManager.IsAnyAdHocJobsterPending()

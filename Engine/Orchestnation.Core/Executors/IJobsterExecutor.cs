@@ -17,9 +17,9 @@ namespace Orchestnation.Core.Executors
         event JobsterFinished<T> JobsterFinishedEvent;
 
         Task ExecuteAsync(
-            IJobsterAsync<T> jobsterAsync,
-            IJobsterAsync<T>[] requiredJobsterAsync,
-            IList<IProgressNotifier<T>> progressNotifiers,
-            JobsterProgressModel progressModel);
+            OperationContext<T> operationOperationContext,
+            IEnumerable<IProgressNotifier<T>> progressNotifiers,
+            JobsterProgressModel progressModel,
+            IJobsterAsync<T> jobsterAsync);
     }
 }

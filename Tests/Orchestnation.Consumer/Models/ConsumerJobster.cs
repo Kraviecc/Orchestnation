@@ -32,13 +32,14 @@ namespace Orchestnation.Consumer.Models
         public string[] RequiredJobIds { get; set; }
         public JobsterStatusEnum Status { get; set; }
 
-        public async Task<ConsumerContext> ExecuteAsync(IJobsterAsync<ConsumerContext>[] requiredJobsters)
+        public async Task<ConsumerContext> ExecuteAsync(OperationContext<ConsumerContext> operationOperationContext)
         {
             await Task.Delay(500);
             Logger.LogDebug(
                 $"Executing Jobster with ID={JobId} in progress... Required jobsters: " +
                 $"{string.Join(' ', RequiredJobIds)}");
-            Logger.LogDebug($"First required jobster status: {requiredJobsters?.FirstOrDefault()?.Status}");
+            Logger.LogDebug(
+                $"First required jobster status: {operationOperationContext.RequiredJobsters?.FirstOrDefault()?.Status}");
             Context.Increment();
 
             return Context;

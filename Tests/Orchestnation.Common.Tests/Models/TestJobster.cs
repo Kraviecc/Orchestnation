@@ -23,7 +23,7 @@ namespace Orchestnation.Common.Tests.Models
         public string[] RequiredJobIds { get; set; }
         public JobsterStatusEnum Status { get; set; }
 
-        public Task<TestJobsterContext> ExecuteAsync(IJobsterAsync<TestJobsterContext>[] requiredJobsters)
+        public Task<TestJobsterContext> ExecuteAsync(OperationContext<TestJobsterContext> operationOperationContext)
         {
             return Task.FromResult(Context);
         }

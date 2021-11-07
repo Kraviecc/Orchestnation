@@ -12,14 +12,14 @@ namespace Orchestnation.Core.Executors
         public event JobsterFinished<T> JobsterFinishedEvent;
 
         public async Task ExecuteAsync(
-            IJobsterAsync<T> jobsterAsync,
-            IJobsterAsync<T>[] requiredJobsterAsync,
-            IList<IProgressNotifier<T>> progressNotifiers,
-            JobsterProgressModel progressModel)
+            OperationContext<T> operationOperationContext,
+            IEnumerable<IProgressNotifier<T>> progressNotifiers,
+            JobsterProgressModel progressModel,
+            IJobsterAsync<T> jobsterAsync)
         {
             try
             {
-                await jobsterAsync.ExecuteAsync(requiredJobsterAsync);
+                await jobsterAsync.ExecuteAsync(operationOperationContext);
                 if (JobsterFinishedEvent != null)
                 {
                     await JobsterFinishedEvent?.Invoke(jobsterAsync, JobsterStatusEnum.Completed);
