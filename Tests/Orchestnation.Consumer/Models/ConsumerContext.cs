@@ -4,7 +4,7 @@ namespace Orchestnation.Consumer.Models
 {
     public class ConsumerContext : IJobsterContext
     {
-        private readonly object _lock = new object();
+        private readonly object _lock = new();
         public int Counter { get; set; }
 
         public void Increment()

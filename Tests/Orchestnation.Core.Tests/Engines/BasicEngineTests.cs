@@ -44,7 +44,7 @@ namespace Orchestnation.Core.Tests.Engines
             const int jobsterCount = 100;
             const int adHocJobsterCount = 50;
             const int jobsterTimeout = 500;
-            CoreTestContext context = new CoreTestContext();
+            CoreTestContext context = new();
             IOrchestnationEngine<CoreTestContext> engine = new JobsterBuilder<CoreTestContext>(_mockLogger)
                 .AddBatchSize(25)
                 .AddExceptionPolicy(ExceptionPolicy.ThrowImmediately)
@@ -114,7 +114,7 @@ namespace Orchestnation.Core.Tests.Engines
         public async Task Engines_BasicEngine_ShouldNotRestoreCompletedState()
         {
             const int jobsterCount = 100;
-            CoreTestContext context = new CoreTestContext();
+            CoreTestContext context = new();
 
             IJobsterAsync<CoreTestContext>[] completedState =
             {
@@ -159,7 +159,7 @@ namespace Orchestnation.Core.Tests.Engines
             bool wasGroupNotified = false;
             const int jobsterCount = 100;
             LocalEventProgressNotifier<CoreTestContext> progressNotifier =
-                new LocalEventProgressNotifier<CoreTestContext>();
+                new();
             progressNotifier.OnJobsterErrorNotifyEvent += (ex, jobster, progress) => wasNotified = true;
             progressNotifier.OnJobsterGroupErrorNotifyEvent +=
                 (ex, groupId, jobsters, progress) => wasGroupNotified = true;
@@ -185,7 +185,7 @@ namespace Orchestnation.Core.Tests.Engines
             bool wasGroupNotified = false;
             const int jobsterCount = 100;
             LocalEventProgressNotifier<CoreTestContext> progressNotifier =
-                new LocalEventProgressNotifier<CoreTestContext>();
+                new();
             progressNotifier.OnJobsterFinishedNotifyEvent += (jobster, progress) => wasNotified = true;
             progressNotifier.OnJobsterGroupFinishedNotifyEvent +=
                 (groupId, jobsters, progress) => wasGroupNotified = true;
@@ -208,8 +208,8 @@ namespace Orchestnation.Core.Tests.Engines
         public async Task Engines_BasicEngine_ShouldRestorePartiallyCompletedState()
         {
             const int jobsterCount = 100;
-            CoreTestContext context = new CoreTestContext();
-            TestJobster initialJobster = new TestJobster(context)
+            CoreTestContext context = new();
+            TestJobster initialJobster = new(context)
             {
                 Status = JobsterStatusEnum.Completed
             };
@@ -240,7 +240,7 @@ namespace Orchestnation.Core.Tests.Engines
         public async Task Engines_BasicEngine_ShouldSaveState()
         {
             const int jobsterCount = 100;
-            MemoryJobsterStateHandler<CoreTestContext> stateHandler = new MemoryJobsterStateHandler<CoreTestContext>(
+            MemoryJobsterStateHandler<CoreTestContext> stateHandler = new(
                 Array.Empty<IJobsterAsync<CoreTestContext>>());
 
             _ = await ExecuteOrchestrator(
@@ -265,7 +265,7 @@ namespace Orchestnation.Core.Tests.Engines
         public void Engines_BasicEngine_ShouldThrowExceptionAtTheEnd()
         {
             const int jobsterCount = 100;
-            CoreTestContext context = new CoreTestContext();
+            CoreTestContext context = new();
 
             Assert.ThrowsAsync<JobsterException>(
                 async () => await ExecuteOrchestrator(
@@ -314,13 +314,13 @@ namespace Orchestnation.Core.Tests.Engines
         [Test]
         public void Engines_BasicEngine_ShouldValidateCyclicDependencies()
         {
-            TestJobster rootJobster = new TestJobster(new CoreTestContext());
-            TestJobster d = new TestJobster(new CoreTestContext(), false, Array.Empty<string>());
-            TestJobster b = new TestJobster(new CoreTestContext(), false, new[] { rootJobster.JobId, d.JobId });
-            TestJobster c = new TestJobster(new CoreTestContext(), false, new[] { b.JobId });
+            TestJobster rootJobster = new(new CoreTestContext());
+            TestJobster d = new(new CoreTestContext(), false, Array.Empty<string>());
+            TestJobster b = new(new CoreTestContext(), false, new[] { rootJobster.JobId, d.JobId });
+            TestJobster c = new(new CoreTestContext(), false, new[] { b.JobId });
             d.RequiredJobIds = new[] { rootJobster.JobId, c.JobId };
 
-            List<IJobsterAsync<CoreTestContext>> jobsters = new List<IJobsterAsync<CoreTestContext>>
+            List<IJobsterAsync<CoreTestContext>> jobsters = new()
             {
                 rootJobster, d, b, c
             };

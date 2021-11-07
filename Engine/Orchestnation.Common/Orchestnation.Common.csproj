@@ -9,6 +9,7 @@
         <Product>Orchestnation.Common</Product>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageVersion>1.0.1</PackageVersion>
+        <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
 </Project>

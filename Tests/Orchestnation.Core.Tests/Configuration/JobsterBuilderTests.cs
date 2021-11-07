@@ -16,8 +16,8 @@ namespace Orchestnation.Core.Tests.Configuration
         [Test]
         public void Configuration_BasicConfiguration_ShouldAddDuplicatedJobstersToDifferentGroups()
         {
-            TestJobster jobster = new TestJobster(new CoreTestContext());
-            TestJobster jobster2 = new TestJobster(new CoreTestContext());
+            TestJobster jobster = new(new CoreTestContext());
+            TestJobster jobster2 = new(new CoreTestContext());
             _jobsterBuilder.AddJobsters("group1", jobster2, jobster);
             _jobsterBuilder.AddJobsters(null, jobster2, jobster);
 
@@ -33,7 +33,7 @@ namespace Orchestnation.Core.Tests.Configuration
         [Test]
         public void Configuration_BasicConfiguration_ShouldLetAddJobstersToDefaultGroup()
         {
-            TestJobster jobster = new TestJobster(new CoreTestContext());
+            TestJobster jobster = new(new CoreTestContext());
 
             Assert.DoesNotThrow(() => _jobsterBuilder.AddJobsters(null, jobster));
             Assert.AreEqual(
@@ -66,8 +66,8 @@ namespace Orchestnation.Core.Tests.Configuration
         [Test]
         public void Configuration_BasicConfiguration_ShouldNotAddDuplicatedJobstersToDefaultGroup()
         {
-            TestJobster jobster = new TestJobster(new CoreTestContext());
-            TestJobster jobster2 = new TestJobster(new CoreTestContext());
+            TestJobster jobster = new(new CoreTestContext());
+            TestJobster jobster2 = new(new CoreTestContext());
             _jobsterBuilder.AddJobsters(null, jobster, jobster2, jobster);
 
             Assert.AreEqual(2, _jobsterBuilder.GetJobstersNumber());

@@ -21,6 +21,14 @@ namespace Orchestnation.Core.Notifiers
 
     public class LocalEventProgressNotifier<T> : IProgressNotifier<T> where T : IJobsterContext
     {
+        public event NotifyError<T> OnJobsterErrorNotifyEvent;
+
+        public event Notify<T> OnJobsterFinishedNotifyEvent;
+
+        public event NotifyGroupError<T> OnJobsterGroupErrorNotifyEvent;
+
+        public event NotifyGroup<T> OnJobsterGroupFinishedNotifyEvent;
+
         public void OnJobsterError(
             Exception exception, IJobsterAsync<T> jobsterAsync, JobsterProgressModel jobsterProgressModel)
         {
@@ -54,13 +62,5 @@ namespace Orchestnation.Core.Notifiers
                 jobsterAsync,
                 jobsterProgressModel);
         }
-
-        public event NotifyError<T> OnJobsterErrorNotifyEvent;
-
-        public event Notify<T> OnJobsterFinishedNotifyEvent;
-
-        public event NotifyGroupError<T> OnJobsterGroupErrorNotifyEvent;
-
-        public event NotifyGroup<T> OnJobsterGroupFinishedNotifyEvent;
     }
 }
