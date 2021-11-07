@@ -25,7 +25,7 @@ namespace Orchestnation.Core.Configuration
             ExceptionPolicy = ExceptionPolicy.ThrowAtTheEnd;
         }
 
-        public int BatchSize { get; internal set; }
+        public int BatchSize { get; private set; }
 
         public ExceptionPolicy ExceptionPolicy { get; set; }
 

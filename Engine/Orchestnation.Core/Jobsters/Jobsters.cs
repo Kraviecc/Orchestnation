@@ -7,7 +7,9 @@ namespace Orchestnation.Core.Jobsters
 {
     public class Jobsters<T> where T : IJobsterContext
     {
-        public Jobsters(BlockingCollection<IJobsterAsync<T>> jobstersAsync, bool restoredState = false)
+        public Jobsters(
+            BlockingCollection<IJobsterAsync<T>> jobstersAsync,
+            bool restoredState = false)
         {
             JobstersAsync = jobstersAsync;
 
@@ -40,8 +42,7 @@ namespace Orchestnation.Core.Jobsters
                          || JobstersAsync
                              .Any(
                                  q => p.RequiredJobIds.Contains(q.JobId)
-                                      && q.Status == JobsterStatusEnum.Completed ||
-                                      q.Status == JobsterStatusEnum.Failed)));
+                                      && q.Status is JobsterStatusEnum.Completed or JobsterStatusEnum.Failed)));
         }
 
         public bool IsGroupFinished(string groupId)
@@ -49,8 +50,7 @@ namespace Orchestnation.Core.Jobsters
             return JobstersAsync
                 .All(
                     p => p.GroupId == groupId
-                         && (p.Status == JobsterStatusEnum.Completed
-                             || p.Status == JobsterStatusEnum.Failed));
+                         && p.Status is JobsterStatusEnum.Completed or JobsterStatusEnum.Failed);
         }
     }
 }

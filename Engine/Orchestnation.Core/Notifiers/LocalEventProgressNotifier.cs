@@ -30,7 +30,9 @@ namespace Orchestnation.Core.Notifiers
         public event NotifyGroup<T> OnJobsterGroupFinishedNotifyEvent;
 
         public void OnJobsterError(
-            Exception exception, IJobsterAsync<T> jobsterAsync, JobsterProgressModel jobsterProgressModel)
+            Exception exception,
+            IJobsterAsync<T> jobsterAsync,
+            JobsterProgressModel jobsterProgressModel)
         {
             OnJobsterErrorNotifyEvent?.Invoke(
                 exception,
@@ -38,13 +40,17 @@ namespace Orchestnation.Core.Notifiers
                 jobsterProgressModel);
         }
 
-        public void OnJobsterFinished(IJobsterAsync<T> jobsterAsync, JobsterProgressModel jobsterProgressModel)
+        public void OnJobsterFinished(
+            IJobsterAsync<T> jobsterAsync,
+            JobsterProgressModel jobsterProgressModel)
         {
             OnJobsterFinishedNotifyEvent?.Invoke(jobsterAsync, jobsterProgressModel);
         }
 
         public void OnJobsterGroupError(
-            Exception exception, string groupId, IEnumerable<IJobsterAsync<T>> jobsterAsync,
+            Exception exception,
+            string groupId,
+            IEnumerable<IJobsterAsync<T>> jobsterAsync,
             JobsterProgressModel jobsterProgressModel)
         {
             OnJobsterGroupErrorNotifyEvent?.Invoke(
@@ -55,7 +61,9 @@ namespace Orchestnation.Core.Notifiers
         }
 
         public void OnJobsterGroupFinished(
-            string groupId, IEnumerable<IJobsterAsync<T>> jobsterAsync, JobsterProgressModel jobsterProgressModel)
+            string groupId,
+            IEnumerable<IJobsterAsync<T>> jobsterAsync,
+            JobsterProgressModel jobsterProgressModel)
         {
             OnJobsterGroupFinishedNotifyEvent?.Invoke(
                 groupId,

@@ -19,7 +19,6 @@ namespace Orchestnation.Core.Jobsters
 
         public CancellationToken CancellationToken { get; }
         public IOrchestnationEngine<T> Engine { get; }
-
         public IEnumerable<IJobsterAsync<T>> RequiredJobsters { get; }
     }
 }

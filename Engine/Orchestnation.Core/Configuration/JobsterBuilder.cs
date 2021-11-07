@@ -47,7 +47,10 @@ namespace Orchestnation.Core.Configuration
             string groupId,
             params IJobsterAsync<T>[] jobsterAsync)
         {
-            _jobsterManager.AddJobsters(OrchestnationStatus.Builder, groupId, jobsterAsync);
+            _jobsterManager.AddJobsters(
+                OrchestnationStatus.Builder,
+                groupId,
+                jobsterAsync);
 
             return this;
         }

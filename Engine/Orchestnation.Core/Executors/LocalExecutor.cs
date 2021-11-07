@@ -19,17 +19,23 @@ namespace Orchestnation.Core.Executors
         {
             try
             {
-                await jobsterAsync.ExecuteAsync(operationOperationContext);
+                await jobsterAsync
+                    .ExecuteAsync(operationOperationContext)
+                    .ConfigureAwait(false);
                 if (JobsterFinishedEvent != null)
                 {
-                    await JobsterFinishedEvent?.Invoke(jobsterAsync, JobsterStatusEnum.Completed);
+                    await JobsterFinishedEvent
+                        .Invoke(jobsterAsync, JobsterStatusEnum.Completed)
+                        .ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
             {
                 if (JobsterFinishedEvent != null)
                 {
-                    await JobsterFinishedEvent?.Invoke(jobsterAsync, JobsterStatusEnum.Failed, ex);
+                    await JobsterFinishedEvent
+                        .Invoke(jobsterAsync, JobsterStatusEnum.Failed, ex)
+                        .ConfigureAwait(false);
                 }
             }
 
